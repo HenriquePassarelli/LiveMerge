@@ -30,3 +30,13 @@ export const getYouTubeVideoId = (url: string): string | null => {
 
   return null
 }
+
+export const normalizeYoutubeUrl = (url: string): string => {
+  const trimmed = url.trim()
+  if (!trimmed) return ''
+
+  const videoId = getYouTubeVideoId(trimmed)
+  if (videoId) return `https://www.youtube.com/watch?v=${videoId}`
+
+  return trimmed
+}
