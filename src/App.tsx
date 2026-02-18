@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { ActionIcon, MantineProvider, SimpleGrid } from '@mantine/core'
 import '@mantine/core/styles.css'
 
@@ -22,6 +22,10 @@ function App() {
   const [chatUrl, setChatUrl] = useState<string | null>(null)
   const [focusedStreamId, setFocusedStreamId] = useState<string | null>(null)
   const [preferences, setPreferences] = useStorage<UserPreferences>(STORAGE_KEYS.preferences, DEFAULT_PREFERENCES)
+
+  useEffect(() => {
+    window.document.title = 'LiveMerge - Watch multiple live streams together'
+  }, [])
 
   useKey('Escape', () => {
     setFocusedStreamId(null)
