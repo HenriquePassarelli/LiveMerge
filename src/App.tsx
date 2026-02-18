@@ -1,27 +1,33 @@
 import { useEffect, useMemo, useState } from 'react'
-import { ActionIcon, MantineProvider, SimpleGrid } from '@mantine/core'
+import { MantineProvider, SimpleGrid } from '@mantine/core'
 import '@mantine/core/styles.css'
 
 import { DEFAULT_PREFERENCES, STORAGE_KEYS } from './livemerge/constants'
-import HeroPanel from './livemerge/components/HeroPanel'
+import Header from './livemerge/components/Header'
 import ManageModal from './livemerge/components/ManageModal'
+import SortModal from './livemerge/components/SortModal'
 import StreamCardItem from './livemerge/components/StreamCardItem'
 import { useStateManager } from './livemerge/hooks/useStateManager'
 import { useStorage } from './livemerge/hooks/useStorage'
-import { FloatingActionWrap, Shell } from './livemerge/styles'
-import type { Stream, StreamInput, UserPreferences } from './livemerge/types'
+import { Shell } from './livemerge/styles'
+import type { SortMode, Stream, StreamInput, UserPreferences } from './livemerge/types'
 import { normalizeStreamInput } from './livemerge/utils/utils'
 import useKey from './livemerge/hooks/useKey'
 import LiveChat from './livemerge/components/LiveChat'
+import { getSortedStreams } from './livemerge/utils/sort.utils'
+import ActionMenu from './livemerge/components/ActionMenu'
 
 function App() {
   const { streams, addStream, removeStream, updateStream } = useStateManager()
 
   const [modalSession, setModalSession] = useState(0)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isSortModalOpen, setIsSortModalOpen] = useState(false)
   const [chatUrl, setChatUrl] = useState<string | null>(null)
   const [focusedStreamId, setFocusedStreamId] = useState<string | null>(null)
+  const [sortMode, setSortMode] = useState<SortMode>('default')
   const [preferences, setPreferences] = useStorage<UserPreferences>(STORAGE_KEYS.preferences, DEFAULT_PREFERENCES)
+  const [customSortOrder, setCustomSortOrder] = useStorage<string[]>(STORAGE_KEYS.customSortOrder, [])
 
   useEffect(() => {
     window.document.title = 'LiveMerge - Watch multiple live streams together'
@@ -30,6 +36,18 @@ function App() {
   useKey('Escape', () => {
     setFocusedStreamId(null)
   })
+
+  useEffect(() => {
+    setCustomSortOrder((current) => {
+      const streamIds = streams.map((stream) => stream.id)
+      const validCurrent = current.filter((id) => streamIds.includes(id))
+      const missingIds = streamIds.filter((id) => !validCurrent.includes(id))
+      const next = [...validCurrent, ...missingIds]
+
+      const isSame = next.length === current.length && next.every((id, index) => id === current[index])
+      return isSame ? current : next
+    })
+  }, [setCustomSortOrder, streams])
 
   const handleAddStream = (input: StreamInput) => {
     const title = input.title?.trim() || ''
@@ -87,6 +105,20 @@ function App() {
     setIsModalOpen(true)
   }
 
+  const handleSetSortMode = (mode: SortMode) => {
+    setSortMode(mode)
+  }
+
+  const handleOpenSortModal = () => {
+    setIsSortModalOpen(true)
+  }
+
+  const handleApplyCustomSort = (nextOrder: string[]) => {
+    setCustomSortOrder(nextOrder)
+    setSortMode('custom')
+    setIsSortModalOpen(false)
+  }
+
   const handleToggleFocus = (streamId: string) => {
     setFocusedStreamId((current) => (current === streamId ? null : streamId))
   }
@@ -96,13 +128,17 @@ function App() {
   }
 
   const orderedStreams = useMemo(() => {
-    if (!focusedStreamId) return streams
+    let sortableStreams = [...streams]
 
-    const focused = streams.find((stream) => stream.id === focusedStreamId)
-    if (!focused) return streams
+    sortableStreams = getSortedStreams(sortableStreams, sortMode, customSortOrder)
 
-    return [focused, ...streams.filter((stream) => stream.id !== focusedStreamId)]
-  }, [focusedStreamId, streams])
+    if (!focusedStreamId) return sortableStreams
+
+    const focused = sortableStreams.find((stream) => stream.id === focusedStreamId)
+    if (!focused) return sortableStreams
+
+    return [focused, ...sortableStreams.filter((stream) => stream.id !== focusedStreamId)]
+  }, [customSortOrder, focusedStreamId, sortMode, streams])
 
   return (
     <MantineProvider
@@ -114,7 +150,7 @@ function App() {
       }}
     >
       <Shell>
-        <HeroPanel streamCount={streams.length} />
+        <Header streamCount={streams.length} />
 
         <SimpleGrid cols={{ base: 1, md: 2, xl: 3 }} spacing="xs">
           {orderedStreams.map((stream) => (
@@ -132,19 +168,12 @@ function App() {
 
         <LiveChat chatUrl={chatUrl} onClose={() => setChatUrl(null)} />
 
-        <FloatingActionWrap>
-          <ActionIcon
-            size={58}
-            radius="xl"
-            color="cyan"
-            variant="filled"
-            onClick={openModal}
-            aria-label="Open setup modal"
-            style={{ boxShadow: '0 14px 30px rgba(0, 0, 0, 0.5)' }}
-          >
-            +
-          </ActionIcon>
-        </FloatingActionWrap>
+        <ActionMenu
+          sortMode={sortMode}
+          openModal={openModal}
+          handleSetSortMode={handleSetSortMode}
+          handleOpenSortModal={handleOpenSortModal}
+        />
 
         <ManageModal
           key={modalSession}
@@ -153,6 +182,14 @@ function App() {
           onSubmitStream={handleAddStream}
           onSubmitUser={handleSaveUserSetup}
           onClose={() => setIsModalOpen(false)}
+        />
+
+        <SortModal
+          opened={isSortModalOpen}
+          streams={streams}
+          initialOrder={customSortOrder}
+          onClose={() => setIsSortModalOpen(false)}
+          onApply={handleApplyCustomSort}
         />
       </Shell>
     </MantineProvider>

@@ -2,9 +2,9 @@ import { memo, useMemo, useRef, useState } from 'react'
 import { Button, Group, TextInput, Title, Tooltip } from '@mantine/core'
 import { IconFocusCentered, IconEdit, IconTrash, IconMessage } from '@tabler/icons-react'
 
-import { StreamCardWrap, VideoFrame } from '../styles'
 import type { Stream } from '../types'
 import RemoveModal from './RemoveModal'
+import styled, { css } from 'styled-components'
 
 type StreamCardItemProps = {
   stream: Stream
@@ -145,3 +145,67 @@ const StreamCardItem = ({ stream, isFocused, ...props }: StreamCardItemProps) =>
 }
 
 export default memo(StreamCardItem)
+
+const StreamCardWrap = styled.div<{ $isFocused?: boolean }>`
+  display: flex;
+  flex-direction: column;
+
+  gap: 8px;
+
+  border: 1px solid #243353;
+  background: radial-gradient(circle at top right, rgba(45, 198, 255, 0.07), transparent 42%), #101a2f;
+  border-radius: 12px;
+  box-shadow: 0 18px 40px rgba(2, 7, 16, 0.32);
+
+  padding: 8px;
+
+  aspect-ratio: 16 / 9;
+
+  ${({ $isFocused: isFocused }) =>
+    isFocused &&
+    css`
+      position: fixed;
+      z-index: 99;
+      width: min(96vw, 1300px);
+      max-width: 100vw;
+      max-height: 92vh;
+      aspect-ratio: 16 / 10;
+      margin: auto;
+      left: 0;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      overflow: auto;
+      box-sizing: border-box;
+    `}
+
+  .cursor-p {
+    cursor: pointer;
+  }
+`
+
+const VideoFrame = styled.div<{ $isFocused?: boolean }>`
+  position: relative;
+  width: 100%;
+  flex: 1;
+
+  border-radius: 12px;
+  overflow: hidden;
+  background: #080f1d;
+
+  ${({ $isFocused }) =>
+    $isFocused
+      ? css`
+          aspect-ratio: 16 / 10;
+        `
+      : css`
+          aspect-ratio: 16 / 9;
+        `}
+
+  iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+    object-fit: ${({ $isFocused }) => ($isFocused ? 'contain' : 'cover')};
+  }
+`

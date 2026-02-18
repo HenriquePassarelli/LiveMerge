@@ -3,7 +3,8 @@ import type { Stream, UserPreferences } from './types'
 export const STORAGE_KEYS = {
   preferences: 'livemerge.preferences',
   streams: 'livemerge.streams',
-  joinedStreams: 'livemerge.joinedStreams'
+  joinedStreams: 'livemerge.joinedStreams',
+  customSortOrder: 'livemerge.customSortOrder'
 } as const
 
 export const DEFAULT_PREFERENCES: UserPreferences = {

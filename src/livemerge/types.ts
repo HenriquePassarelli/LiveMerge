@@ -16,3 +16,5 @@ export type Stream = StreamInput & {
 }
 
 export type LiveStatus = 'live' | 'upcoming' | 'offline' | 'unknown'
+
+export type SortMode = 'default' | 'title-asc' | 'custom'

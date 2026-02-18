@@ -1,14 +1,14 @@
 import { Anchor, Badge, Flex, Group, Text, Title } from '@mantine/core'
 import { IconBrandGithub } from '@tabler/icons-react'
-import { HeaderMeta, Hero } from '../styles'
+import styled from 'styled-components'
 
 type HeroPanelProps = {
   streamCount: number
 }
 
-const HeroPanel = ({ streamCount }: HeroPanelProps) => {
+const Header = ({ streamCount }: HeroPanelProps) => {
   return (
-    <Hero>
+    <Container>
       <Flex
         gap="md"
         justify="space-between"
@@ -39,8 +39,38 @@ const HeroPanel = ({ streamCount }: HeroPanelProps) => {
           </Anchor>
         </Group>
       </Flex>
-    </Hero>
+    </Container>
   )
 }
 
-export default HeroPanel
+export default Header
+
+export const Container = styled.section`
+  margin-bottom: 18px;
+  border-radius: 18px;
+  border: 1px solid #1f2b44;
+  background:
+    radial-gradient(circle at 90% 10%, rgba(69, 201, 255, 0.16), transparent 38%),
+    linear-gradient(155deg, #0f1c31, #0b1324);
+  padding: 22px;
+
+  @media (max-width: 768px) {
+    margin-bottom: 14px;
+    border-radius: 14px;
+    padding: 16px;
+  }
+
+  @media (max-width: 480px) {
+    border-radius: 12px;
+    padding: 14px 12px;
+  }
+`
+
+export const HeaderMeta = styled.div`
+  display: grid;
+  gap: 4px;
+
+  @media (max-width: 768px) {
+    gap: 2px;
+  }
+`
