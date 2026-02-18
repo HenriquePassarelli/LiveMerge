@@ -9,7 +9,12 @@ type HeroPanelProps = {
 const HeroPanel = ({ streamCount }: HeroPanelProps) => {
   return (
     <Hero>
-      <Flex direction={{ base: 'column', sm: 'row' }} justify="space-between" align={{ base: 'stretch', sm: 'flex-start' }} gap="md">
+      <Flex
+        gap="md"
+        justify="space-between"
+        direction={{ base: 'column', sm: 'row' }}
+        align={{ base: 'stretch', sm: 'flex-start' }}
+      >
         <HeaderMeta>
           <Title order={1} size="clamp(1.5rem, 4vw, 2.15rem)">
             LiveMerge
