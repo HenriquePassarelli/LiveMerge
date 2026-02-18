@@ -1,4 +1,5 @@
-import { Badge, Group, Text, Title } from '@mantine/core'
+import { Anchor, Badge, Flex, Group, Text, Title } from '@mantine/core'
+import { IconBrandGithub } from '@tabler/icons-react'
 import { HeaderMeta, Hero } from '../styles'
 
 type HeroPanelProps = {
@@ -8,34 +9,31 @@ type HeroPanelProps = {
 const HeroPanel = ({ streamCount }: HeroPanelProps) => {
   return (
     <Hero>
-      <Group justify="space-between" align="flex-start" gap="md">
+      <Flex direction={{ base: 'column', sm: 'row' }} justify="space-between" align={{ base: 'stretch', sm: 'flex-start' }} gap="md">
         <HeaderMeta>
-          <Title order={1}>LiveMerge</Title>
+          <Title order={1} size="clamp(1.5rem, 4vw, 2.15rem)">
+            LiveMerge
+          </Title>
           <Text c="dimmed" size="sm">
             Focus on content with a clean multi-stream wall and persistent setup.
           </Text>
         </HeaderMeta>
 
-        <Group gap="xs">
-          <Badge variant="light" color="cyan">
+        <Group justify="space-between" align="center" wrap="nowrap">
+          <Badge variant="light" color="cyan" size="lg">
             {streamCount} streams
           </Badge>
-        </Group>
-      </Group>
 
-      {/* <Group mt="md" gap="xs">
-        <Badge color="gray" variant="dot">
-          {activeUser}
-        </Badge>
-        <Badge color="gray" variant="dot">
-          {category}
-        </Badge>
-        {autoJoin && (
-          <Badge color="teal" variant="filled">
-            Auto-join enabled
-          </Badge>
-        )}
-      </Group> */}
+          <Anchor
+            c="white"
+            target="_blank"
+            rel="noopener noreferrer"
+            href="https://github.com/HenriquePassarelli/LiveMerge"
+          >
+            <IconBrandGithub size={20} />
+          </Anchor>
+        </Group>
+      </Flex>
     </Hero>
   )
 }

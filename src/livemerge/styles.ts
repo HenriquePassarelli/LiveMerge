@@ -4,6 +4,10 @@ export const Shell = styled.main`
   /* max-width: 1420px; */
   margin: 0 auto;
   padding: 28px 18px 96px;
+
+  @media (max-width: 768px) {
+    padding: 18px 12px 88px;
+  }
 `
 
 export const Hero = styled.section`
@@ -14,9 +18,20 @@ export const Hero = styled.section`
     radial-gradient(circle at 90% 10%, rgba(69, 201, 255, 0.16), transparent 38%),
     linear-gradient(155deg, #0f1c31, #0b1324);
   padding: 22px;
+
+  @media (max-width: 768px) {
+    margin-bottom: 14px;
+    border-radius: 14px;
+    padding: 16px;
+  }
+
+  @media (max-width: 480px) {
+    border-radius: 12px;
+    padding: 14px 12px;
+  }
 `
 
-export const StreamCardWrap = styled.div<{ isFocused?: boolean }>`
+export const StreamCardWrap = styled.div<{ $isFocused?: boolean }>`
   display: flex;
   flex-direction: column;
 
@@ -31,7 +46,7 @@ export const StreamCardWrap = styled.div<{ isFocused?: boolean }>`
 
   aspect-ratio: 16 / 9;
 
-  ${({ isFocused }) =>
+  ${({ $isFocused: isFocused }) =>
     isFocused &&
     css`
       position: absolute;
@@ -88,4 +103,8 @@ export const FloatingActionWrap = styled.div`
 export const HeaderMeta = styled.div`
   display: grid;
   gap: 4px;
+
+  @media (max-width: 768px) {
+    gap: 2px;
+  }
 `

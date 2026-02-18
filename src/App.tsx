@@ -10,21 +10,18 @@ import { useStateManager } from './livemerge/hooks/useStateManager'
 import { useStorage } from './livemerge/hooks/useStorage'
 import { FloatingActionWrap, Shell } from './livemerge/styles'
 import type { Stream, StreamInput, UserPreferences } from './livemerge/types'
-import { normalizeStreamInput } from './livemerge/utils'
+import { normalizeStreamInput } from './livemerge/utils/utils'
 import useKey from './livemerge/hooks/useKey'
+import LiveChat from './livemerge/components/LiveChat'
 
 function App() {
   const { streams, addStream, removeStream, updateStream } = useStateManager()
 
-  const [preferences, setPreferences] = useStorage<UserPreferences>(STORAGE_KEYS.preferences, DEFAULT_PREFERENCES)
-  const [joinedStreamIds, setJoinedStreamIds] = useStorage<string[]>(STORAGE_KEYS.joinedStreams, [])
-  const [isModalOpen, setIsModalOpen] = useState(false)
   const [modalSession, setModalSession] = useState(0)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [chatUrl, setChatUrl] = useState<string | null>(null)
   const [focusedStreamId, setFocusedStreamId] = useState<string | null>(null)
-
-  const joinedCount = useMemo(() => joinedStreamIds.length, [joinedStreamIds])
-  const activeUser = preferences.displayName.trim() || 'Guest Viewer'
-  const category = preferences.favoriteCategory.trim() || 'General'
+  const [preferences, setPreferences] = useStorage<UserPreferences>(STORAGE_KEYS.preferences, DEFAULT_PREFERENCES)
 
   useKey('Escape', () => {
     setFocusedStreamId(null)
@@ -36,6 +33,7 @@ function App() {
     const normalizedUrls = normalizeStreamInput(input)
 
     if (!title || !normalizedUrls.embedUrl) {
+      alert('Please provide both a title and a valid URL for the stream.')
       return
     }
 
@@ -46,10 +44,6 @@ function App() {
     }
 
     addStream(newStream)
-
-    if (preferences.autoJoin) {
-      setJoinedStreamIds((current) => [...new Set([...current, newStream.id])])
-    }
 
     setIsModalOpen(false)
   }
@@ -65,7 +59,6 @@ function App() {
 
   const handleRemoveStream = (streamId: string) => {
     removeStream(streamId)
-    setJoinedStreamIds((current) => current.filter((id) => id !== streamId))
     setFocusedStreamId((current) => (current === streamId ? null : current))
   }
 
@@ -74,7 +67,11 @@ function App() {
     if (!sourceUrl) return
 
     const normalizedEmbedUrl = normalizeStreamInput(sourceUrl)
-    if (!normalizedEmbedUrl) return
+
+    if (!normalizedEmbedUrl || !normalizedEmbedUrl.embedUrl) {
+      alert('Please provide a valid URL for the stream.')
+      return
+    }
 
     updateStream(streamId, {
       ...normalizedEmbedUrl
@@ -88,6 +85,10 @@ function App() {
 
   const handleToggleFocus = (streamId: string) => {
     setFocusedStreamId((current) => (current === streamId ? null : streamId))
+  }
+
+  const handleOpenChat = (stream: Stream) => {
+    setChatUrl((prev) => (prev?.includes(stream.chatUrl) ? null : stream.chatUrl))
   }
 
   const orderedStreams = useMemo(() => {
@@ -117,21 +118,24 @@ function App() {
               key={stream.id}
               stream={stream}
               isFocused={stream.id === focusedStreamId}
+              onOpenChat={handleOpenChat}
               onRemove={handleRemoveStream}
-              onUpdateUrl={handleUpdateStreamUrl}
               onToggleFocus={handleToggleFocus}
+              onUpdateUrl={handleUpdateStreamUrl}
             />
           ))}
         </SimpleGrid>
+
+        <LiveChat chatUrl={chatUrl} onClose={() => setChatUrl(null)} />
 
         <FloatingActionWrap>
           <ActionIcon
             size={58}
             radius="xl"
-            variant="filled"
             color="cyan"
-            aria-label="Open setup modal"
+            variant="filled"
             onClick={openModal}
+            aria-label="Open setup modal"
             style={{ boxShadow: '0 14px 30px rgba(0, 0, 0, 0.5)' }}
           >
             +
@@ -141,10 +145,10 @@ function App() {
         <ManageModal
           key={modalSession}
           opened={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
           initialPreferences={preferences}
           onSubmitStream={handleAddStream}
           onSubmitUser={handleSaveUserSetup}
+          onClose={() => setIsModalOpen(false)}
         />
       </Shell>
     </MantineProvider>

@@ -19,6 +19,12 @@ const ManageModal = ({ opened, onClose, initialPreferences, onSubmitStream, onSu
 
   const handleStreamSubmit = (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault()
+
+    if (!draftStream?.title?.trim() || !draftStream.originalUrl.trim()) {
+      alert('Please provide both a title and an original URL for the stream.')
+      return
+    }
+
     onSubmitStream(draftStream)
     setDraftStream(EMPTY_STREAM_INPUT)
   }
@@ -33,7 +39,7 @@ const ManageModal = ({ opened, onClose, initialPreferences, onSubmitStream, onSu
       <Tabs defaultValue="stream" keepMounted={false}>
         <Tabs.List grow>
           <Tabs.Tab value="stream">Add Stream</Tabs.Tab>
-          <Tabs.Tab value="user">User Setup</Tabs.Tab>
+          {/* <Tabs.Tab value="user">User Setup</Tabs.Tab> */}
         </Tabs.List>
 
         <Tabs.Panel value="stream" pt="md">
@@ -52,13 +58,13 @@ const ManageModal = ({ opened, onClose, initialPreferences, onSubmitStream, onSu
                 required
               />
               <TextInput
-                label="Embed URL"
+                label="Original URL"
                 placeholder="https://www.youtube.com/watch?v=..."
-                value={draftStream.embedUrl}
+                value={draftStream.originalUrl}
                 onChange={(event) =>
                   setDraftStream({
                     ...draftStream,
-                    embedUrl: event.currentTarget.value
+                    originalUrl: event.currentTarget.value
                   })
                 }
                 required
