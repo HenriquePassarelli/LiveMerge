@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 
 export function safeRead<T>(key: string, fallback: T): T {
   try {
@@ -19,13 +19,16 @@ type UseStorageReturn<T> = [T, (value: T | ((prev: T) => T)) => void]
 export const useStorage = <T>(key: string, fallback: T): UseStorageReturn<T> => {
   const [state, setState] = useState<T>(() => safeRead<T>(key, fallback))
 
-  const setStorage = (value: T | ((prev: T) => T)) => {
-    setState((prev) => {
-      const newValue = typeof value === 'function' ? (value as (prev: T) => T)(prev) : value
-      saveToStorage(key, newValue)
-      return newValue
-    })
-  }
+  const setStorage = useCallback(
+    (value: T | ((prev: T) => T)) => {
+      setState((prev) => {
+        const newValue = typeof value === 'function' ? (value as (prev: T) => T)(prev) : value
+        saveToStorage(key, newValue)
+        return newValue
+      })
+    },
+    [key]
+  )
 
   return [state, setStorage]
 }

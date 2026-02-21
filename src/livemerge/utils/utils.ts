@@ -1,7 +1,7 @@
-import type { StreamInput } from '../types'
+import type { StreamInput } from '../types/types'
 import { normalizeYoutubeUrl } from './youtube.utils'
 
-export const normalizeEmbedUrl = (url: string): string => {
+const normalizeEmbedUrl = (url: string): string => {
   const trimmed = url.trim()
   if (!trimmed) return ''
 
@@ -23,7 +23,7 @@ export const normalizeEmbedUrl = (url: string): string => {
   return trimmed
 }
 
-export const normalizeChatUrl = (url: string): string => {
+const normalizeChatUrl = (url: string): string => {
   const trimmed = url.trim()
   if (!trimmed) return ''
 
@@ -49,11 +49,11 @@ export const normalizeStreamInput = (input: StreamInput | string): Omit<StreamIn
   if (typeof input === 'string') {
     const originalUrl = normalizeYoutubeUrl(input)
 
-    return normalizeStreamInput({
+    return {
       originalUrl: originalUrl,
       embedUrl: normalizeEmbedUrl(originalUrl),
       chatUrl: normalizeChatUrl(originalUrl)
-    })
+    }
   }
 
   const originalUrl = normalizeYoutubeUrl(input.originalUrl)

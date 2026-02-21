@@ -1,21 +1,26 @@
 import { useState } from 'react'
 import type { SubmitEvent } from 'react'
-import { Button, Group, Modal, Stack, Switch, Tabs, TextInput } from '@mantine/core'
+import { Button, Group, Modal, Stack, Switch, Tabs, Text, TextInput } from '@mantine/core'
 
-import type { StreamInput, UserPreferences } from '../types'
+import type { StreamInput, UserPreferences } from '../types/types'
 import { EMPTY_STREAM_INPUT } from '../constants'
+import GoogleButton from '../ui/GoogleButton'
 
 type ManageModalProps = {
   opened: boolean
   onClose: () => void
   initialPreferences: UserPreferences
+  accessToken?: string
+  handleGoogleSignIn: () => void
   onSubmitStream: (stream: StreamInput) => void
+  onSubmitChannel: (channelId: string) => void
   onSubmitUser: (preferences: UserPreferences) => void
 }
 
-const ManageModal = ({ opened, onClose, initialPreferences, onSubmitStream, onSubmitUser }: ManageModalProps) => {
+const ManageModal = ({ onClose, handleGoogleSignIn, onSubmitStream, onSubmitUser, ...props }: ManageModalProps) => {
+  const [draftChannelId, setDraftChannelId] = useState<string>('')
   const [draftStream, setDraftStream] = useState<StreamInput>(EMPTY_STREAM_INPUT)
-  const [draftPreferences, setDraftPreferences] = useState<UserPreferences>(initialPreferences)
+  const [draftPreferences, setDraftPreferences] = useState<UserPreferences>(props.initialPreferences)
 
   const handleStreamSubmit = (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -29,16 +34,30 @@ const ManageModal = ({ opened, onClose, initialPreferences, onSubmitStream, onSu
     setDraftStream(EMPTY_STREAM_INPUT)
   }
 
+  const handleChannelSubmit = (event: SubmitEvent<HTMLFormElement>) => {
+    event.preventDefault()
+
+    if (!draftChannelId.trim()) {
+      alert('Please provide a channel ID.')
+      return
+    }
+
+    props.onSubmitChannel(draftChannelId.trim())
+    setDraftChannelId('')
+  }
+
   const handleUserSubmit = (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault()
     onSubmitUser(draftPreferences)
   }
 
   return (
-    <Modal opened={opened} onClose={onClose} title="Manage LiveMerge" centered size="lg">
+    <Modal opened={props.opened} onClose={onClose} title="Manage LiveMerge" centered size="lg">
       <Tabs defaultValue="stream" keepMounted={false}>
         <Tabs.List grow>
           <Tabs.Tab value="stream">Add Stream</Tabs.Tab>
+          <Tabs.Tab value="channel">Add Channel</Tabs.Tab>
+
           {/* <Tabs.Tab value="user">User Setup</Tabs.Tab> */}
         </Tabs.List>
 
@@ -116,6 +135,32 @@ const ManageModal = ({ opened, onClose, initialPreferences, onSubmitStream, onSu
               </Group>
             </Stack>
           </form>
+        </Tabs.Panel>
+
+        <Tabs.Panel value="channel" pt="md">
+          <Stack>
+            {!props.accessToken ? (
+              <>
+                <Text>Sign in with Google to add channels</Text>
+                <GoogleButton onClick={handleGoogleSignIn} />
+              </>
+            ) : (
+              <form onSubmit={handleChannelSubmit}>
+                <Stack>
+                  <TextInput
+                    label="Channel ID"
+                    placeholder=""
+                    value={draftChannelId}
+                    onChange={(event) => setDraftChannelId(event.currentTarget.value)}
+                    required
+                  />
+                  <Group justify="flex-end">
+                    <Button type="submit">Add Channel</Button>
+                  </Group>
+                </Stack>
+              </form>
+            )}
+          </Stack>
         </Tabs.Panel>
       </Tabs>
     </Modal>

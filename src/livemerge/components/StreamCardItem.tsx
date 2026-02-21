@@ -1,10 +1,11 @@
 import { memo, useMemo, useRef, useState } from 'react'
-import { Button, Group, TextInput, Title, Tooltip } from '@mantine/core'
-import { IconFocusCentered, IconEdit, IconTrash, IconMessage } from '@tabler/icons-react'
+import { Button, Group, TextInput, Title, Tooltip, Center, Stack, Text } from '@mantine/core'
+import { IconFocusCentered, IconEdit, IconTrash, IconMessage, IconReload } from '@tabler/icons-react'
 
-import type { Stream } from '../types'
+import type { Stream } from '../types/types'
 import RemoveModal from './RemoveModal'
 import styled, { css } from 'styled-components'
+import { buildPlayableUrl } from '../utils/youtube.utils'
 
 type StreamCardItemProps = {
   stream: Stream
@@ -12,6 +13,7 @@ type StreamCardItemProps = {
   onRemove: (streamId: string) => void
   onOpenChat: (stream: Stream) => void
   onToggleFocus: (streamId: string) => void
+  reloadChannel?: (channelId: string) => void
   onUpdateUrl: (streamId: string, nextUrl: string) => void
 }
 
@@ -22,24 +24,7 @@ const StreamCardItem = ({ stream, isFocused, ...props }: StreamCardItemProps) =>
   const [draftUrl, setDraftUrl] = useState(stream.originalUrl || stream.embedUrl)
   const [isRemoveConfirmOpen, setIsRemoveConfirmOpen] = useState(false)
 
-  const playerUrl = useMemo(() => {
-    try {
-      const url = new URL(stream.embedUrl)
-      url.searchParams.set('autoplay', '1')
-      url.searchParams.set('mute', '1')
-      url.searchParams.set('controls', '1')
-      url.searchParams.set('modestbranding', '1')
-      url.searchParams.set('rel', '0')
-      url.searchParams.set('enablejsapi', '1')
-      url.searchParams.set('autohide', '0')
-      url.searchParams.set('origin', window.location.origin)
-      url.searchParams.set('disablekb', '1')
-
-      return url.toString()
-    } catch {
-      return stream.embedUrl
-    }
-  }, [stream.embedUrl])
+  const playerUrl = useMemo(() => buildPlayableUrl(stream.embedUrl), [stream.embedUrl])
 
   const handleSaveUrl = () => {
     setIsEditingUrl(false)
@@ -93,6 +78,12 @@ const StreamCardItem = ({ stream, isFocused, ...props }: StreamCardItemProps) =>
             <IconFocusCentered className="cursor-p" size={20} onClick={() => props.onToggleFocus(stream.id)} />
           </Tooltip>
 
+          {stream.channelId && (
+            <Tooltip label="Reload stream" position="top" withArrow>
+              <IconReload size={20} className="cursor-p" onClick={() => props.reloadChannel?.(stream.channelId!)} />
+            </Tooltip>
+          )}
+
           {isEditingUrl ? (
             <>
               <Button size="compact-xs" variant="light" onClick={handleSaveUrl}>
@@ -103,9 +94,11 @@ const StreamCardItem = ({ stream, isFocused, ...props }: StreamCardItemProps) =>
               </Button>
             </>
           ) : (
-            <Tooltip label="Edit stream URL" position="top" withArrow>
-              <IconEdit className="cursor-p" size={20} onClick={handleStartEdit} />
-            </Tooltip>
+            !stream.channelId && (
+              <Tooltip label="Edit stream URL" position="top" withArrow>
+                <IconEdit className="cursor-p" size={20} onClick={handleStartEdit} />
+              </Tooltip>
+            )
           )}
 
           <Tooltip label="Remove stream" position="top" withArrow>
@@ -124,14 +117,27 @@ const StreamCardItem = ({ stream, isFocused, ...props }: StreamCardItemProps) =>
       )}
 
       <VideoFrame $isFocused={isFocused}>
-        <iframe
-          id={stream.id}
-          ref={playerRef}
-          src={playerUrl}
-          title={stream.title}
-          allowFullScreen={false}
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-        />
+        {stream.isLive === false ? (
+          <Center style={{ width: '100%', height: '100%' }}>
+            <Stack align="center" gap="sm">
+              <Text size="lg" fw={500} c="dimmed">
+                Not Broadcasting
+              </Text>
+              <Text size="sm" c="dimmed">
+                This channel is not currently live
+              </Text>
+            </Stack>
+          </Center>
+        ) : (
+          <iframe
+            id={stream.id}
+            ref={playerRef}
+            src={playerUrl}
+            title={stream.title}
+            allowFullScreen={false}
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          />
+        )}
       </VideoFrame>
 
       <RemoveModal
@@ -192,6 +198,9 @@ const VideoFrame = styled.div<{ $isFocused?: boolean }>`
   border-radius: 12px;
   overflow: hidden;
   background: #080f1d;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 
   ${({ $isFocused }) =>
     $isFocused

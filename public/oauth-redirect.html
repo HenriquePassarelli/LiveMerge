@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Google OAuth Redirect Handler</title>
+</head>
+<body>
+<script>
+  // Parse access token and expiration from URL fragment
+  function getTokenInfo() {
+    const hash = window.location.hash.substring(1);
+    const params = new URLSearchParams(hash);
+
+    console.log('Received URL fragment:', hash);
+
+    const accessToken = params.get('access_token');
+    const expiresIn = params.get('expires_in');
+    let expireDate = null;
+    if (expiresIn) {
+      expireDate = Date.now() + parseInt(expiresIn, 10) * 1000;
+    }
+    return { accessToken, expiresIn, expireDate };
+  }
+
+  const { accessToken, expiresIn, expireDate } = getTokenInfo();
+  if (accessToken && window.opener) {
+    window.opener.postMessage({
+      googleAccessToken: accessToken,
+      googleTokenExpiresIn: expiresIn,
+      googleTokenExpireDate: expireDate
+    }, window.location.origin);
+
+    try {
+      setTimeout(() => window.close(), 300);
+    } catch (e) {
+      console.error('Cannot close popup due to COOP policy');
+    }
+    document.body.innerText = 'Authorization successful. You can close this window.';
+  } else {
+    document.body.innerText = 'No access token found. Please try again.';
+  }
+</script>
+</body>
+</html>

@@ -40,3 +40,22 @@ export const normalizeYoutubeUrl = (url: string): string => {
 
   return trimmed
 }
+
+export const buildPlayableUrl = (embedUrl: string): string => {
+  try {
+    const url = new URL(embedUrl)
+    url.searchParams.set('autoplay', '1')
+    url.searchParams.set('mute', '1')
+    url.searchParams.set('controls', '1')
+    url.searchParams.set('modestbranding', '1')
+    url.searchParams.set('rel', '0')
+    url.searchParams.set('enablejsapi', '1')
+    url.searchParams.set('autohide', '0')
+    url.searchParams.set('origin', window.location.origin)
+    url.searchParams.set('disablekb', '1')
+
+    return url.toString()
+  } catch {
+    return embedUrl
+  }
+}

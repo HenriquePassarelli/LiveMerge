@@ -1,12 +1,21 @@
 import { Anchor, Badge, Flex, Group, Text, Title } from '@mantine/core'
 import { IconBrandGithub } from '@tabler/icons-react'
 import styled from 'styled-components'
+import GoogleButton from '../ui/GoogleButton'
 
 type HeroPanelProps = {
-  streamCount: number
+  token?: string
+  streamCount?: number
+  channelsCount?: number
+  handleGoogleSignIn: () => void
 }
 
-const Header = ({ streamCount }: HeroPanelProps) => {
+const Header = ({ token, streamCount = 0, channelsCount = 0, handleGoogleSignIn }: HeroPanelProps) => {
+  const streams = streamCount + channelsCount
+  const streamLabel = streams === 1 ? 'stream' : 'streams'
+
+  console.log(token)
+
   return (
     <Container>
       <Flex
@@ -25,9 +34,12 @@ const Header = ({ streamCount }: HeroPanelProps) => {
         </HeaderMeta>
 
         <Group justify="space-between" align="center" wrap="nowrap">
-          <Badge variant="light" color="cyan" size="lg">
-            {streamCount} streams
-          </Badge>
+          <Group justify="space-between" align="center" wrap="nowrap">
+            {!token && channelsCount > 0 && <GoogleButton onClick={handleGoogleSignIn}>Login</GoogleButton>}
+            <Badge variant="light" color="cyan" size="lg">
+              {streams} {streamLabel}
+            </Badge>
+          </Group>
 
           <Anchor
             c="white"
