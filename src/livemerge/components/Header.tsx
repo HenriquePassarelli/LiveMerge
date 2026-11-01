@@ -3,10 +3,14 @@ import { IconBrandGithub } from '@tabler/icons-react'
 import styled from 'styled-components'
 
 type HeroPanelProps = {
-  streamCount: number
+  streamCount?: number
+  channelsCount?: number
 }
 
-const Header = ({ streamCount }: HeroPanelProps) => {
+const Header = ({ streamCount = 0, channelsCount = 0 }: HeroPanelProps) => {
+  const streams = streamCount + channelsCount
+  const streamLabel = streams === 1 ? 'stream' : 'streams'
+
   return (
     <Container>
       <Flex
@@ -24,20 +28,30 @@ const Header = ({ streamCount }: HeroPanelProps) => {
           </Text>
         </HeaderMeta>
 
-        <Group justify="space-between" align="center" wrap="nowrap">
-          <Badge variant="light" color="cyan" size="lg">
-            {streamCount} streams
-          </Badge>
+        <Flex
+          gap="md"
+          justify="space-between"
+          direction={{ base: 'row', sm: 'column' }}
+          align={{ base: 'stretch', sm: 'flex-end' }}
+        >
+          <Group justify="space-between" align="center" wrap="nowrap">
+            <Badge variant="light" color="cyan" size="lg">
+              {streams} {streamLabel}
+            </Badge>
 
-          <Anchor
-            c="white"
-            target="_blank"
-            rel="noopener noreferrer"
-            href="https://github.com/HenriquePassarelli/LiveMerge"
-          >
-            <IconBrandGithub size={20} />
+            <Anchor
+              c="white"
+              target="_blank"
+              rel="noopener noreferrer"
+              href="https://github.com/HenriquePassarelli/LiveMerge"
+            >
+              <IconBrandGithub size={20} />
+            </Anchor>
+          </Group>
+          <Anchor c="dimmed" size="sm" href="/privacy">
+            Privacy
           </Anchor>
-        </Group>
+        </Flex>
       </Flex>
     </Container>
   )

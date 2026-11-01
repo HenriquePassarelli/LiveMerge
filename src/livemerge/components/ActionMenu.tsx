@@ -1,20 +1,17 @@
 import { useState } from 'react'
 import styled from 'styled-components'
 import { ActionIcon, Stack, Tooltip } from '@mantine/core'
-import { IconListNumbers, IconPlus, IconSettings, IconSortAZ, IconX } from '@tabler/icons-react'
-import type { SortMode } from '../types'
+import { IconListNumbers, IconPlus, IconSettings, IconX } from '@tabler/icons-react'
 
 type Props = {
-  sortMode: SortMode
   openModal: () => void
-  handleSetSortMode: (mode: 'default' | 'title-asc') => void
   handleOpenSortModal: () => void
 }
 
 const ActionMenu = (props: Props) => {
   const [isQuickActionsOpen, setIsQuickActionsOpen] = useState(false)
 
-  const { openModal, handleSetSortMode, sortMode, handleOpenSortModal } = props
+  const { openModal, handleOpenSortModal } = props
 
   const handleToggleQuickActions = () => {
     setIsQuickActionsOpen((current) => !current)
@@ -38,27 +35,14 @@ const ActionMenu = (props: Props) => {
               </ActionIcon>
             </Tooltip>
 
-            <Tooltip label={sortMode === 'title-asc' ? 'Reset sort' : 'Sort A-Z'} position="left" withArrow>
+            <Tooltip label="Sort streams" position="left" withArrow>
               <ActionIcon
                 size={38}
                 radius="xl"
-                color={sortMode === 'title-asc' ? 'cyan' : 'gray'}
-                variant={sortMode === 'title-asc' ? 'filled' : 'light'}
-                onClick={() => handleSetSortMode(sortMode === 'title-asc' ? 'default' : 'title-asc')}
-                aria-label="Sort streams A to Z"
-              >
-                <IconSortAZ size={18} />
-              </ActionIcon>
-            </Tooltip>
-
-            <Tooltip label="Custom sort" position="left" withArrow>
-              <ActionIcon
-                size={38}
-                radius="xl"
-                color={sortMode === 'custom' ? 'cyan' : 'gray'}
-                variant={sortMode === 'custom' ? 'filled' : 'light'}
+                color="gray"
+                variant="light"
                 onClick={handleOpenSortModal}
-                aria-label="Open custom sort"
+                aria-label="Open sort options"
               >
                 <IconListNumbers size={18} />
               </ActionIcon>

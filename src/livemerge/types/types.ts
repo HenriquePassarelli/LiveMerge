@@ -9,12 +9,19 @@ export type StreamInput = {
   originalUrl: string
   embedUrl: string
   chatUrl: string
+  channelId?: string
 }
 
 export type Stream = StreamInput & {
   id: string
+  isLive?: boolean
+  shouldAutoplay?: boolean
+}
+
+export type ChannelInput = {
+  channelId: string
 }
 
 export type LiveStatus = 'live' | 'upcoming' | 'offline' | 'unknown'
 
-export type SortMode = 'default' | 'title-asc' | 'custom'
+export type SortMode = 'default' | 'title-asc' | 'title-desc' | 'custom'

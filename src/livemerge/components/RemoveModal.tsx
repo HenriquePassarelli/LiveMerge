@@ -1,5 +1,5 @@
 import { Button, Group, Modal, Text } from '@mantine/core'
-import type { Stream } from '../types'
+import type { Stream } from '../types/types'
 
 type Props = {
   stream: Stream

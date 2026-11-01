@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="LiveMerge Privacy Policy" />
+    <title>Privacy Policy | LiveMerge</title>
+    <style>
+      :root { color: #edf4ff; background: #0b1324; font-family: "IBM Plex Sans", "Segoe UI", Roboto, Arial, sans-serif; }
+      body { margin: 0; line-height: 1.6; }
+      main { box-sizing: border-box; max-width: 860px; margin: 0 auto; padding: 48px 24px 72px; }
+      h1, h2 { color: #fff; line-height: 1.25; }
+      h2 { margin-top: 36px; }
+      a { color: #65d8ff; }
+      .lede, .updated, #deletion-status { color: #b8c5da; }
+      .notice { border: 1px solid #2e4a68; border-radius: 12px; background: #10203a; padding: 18px 20px; }
+      button { cursor: pointer; border: 0; border-radius: 8px; background: #24b8e6; color: #06111e; font: inherit; font-weight: 700; padding: 10px 14px; }
+      #deletion-status { margin-left: 10px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <a href="/" aria-label="Return to LiveMerge home">← LiveMerge</a>
+      <h1>Privacy Policy</h1>
+      <p class="updated">Effective date: November 1, 2026</p>
+      <p class="lede">LiveMerge is a browser-based multi-stream viewing tool. This policy explains how LiveMerge uses data when you use its features. LiveMerge has no accounts and no sign-in.</p>
+
+      <h2>YouTube</h2>
+      <p>LiveMerge embeds YouTube players and live chats, and checks whether the channels and videos you add are live by reading publicly available YouTube pages. It does not use Google sign-in or the YouTube Data API. Your use of YouTube is subject to the <a href="https://www.youtube.com/t/terms" target="_blank" rel="noopener noreferrer">YouTube Terms of Service</a>.</p>
+      <p>Google and YouTube may collect and process information under the <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">Google Privacy Policy</a>.</p>
+
+      <h2>Data we access and use</h2>
+      <p>When you add a channel or a stream, LiveMerge sends its YouTube channel ID or video ID to a LiveMerge server function, which uses it only to:</p>
+      <ul>
+        <li>look up the channel name and whether the channel is currently live; and</li>
+        <li>check whether a YouTube video is live so it can configure playback.</li>
+      </ul>
+      <p>The function does not store these requests. Responses may be cached for about a minute so that repeated checks do not contact YouTube each time. The hosting provider, Cloudflare, may process standard technical request data such as IP addresses under its own policies.</p>
+
+      <h2>Storage, sharing, and retention</h2>
+      <p>LiveMerge stores its settings, added streams and channels, and sort preferences in your browser's local storage on this device. It does not keep a database of users or their streams. LiveMerge does not sell or share this data with third parties. Embedded YouTube players are provided by Google and are governed by Google's policies.</p>
+
+      <h2>Delete your LiveMerge data</h2>
+      <div class="notice">
+        <p>You can delete all LiveMerge data stored in this browser, including your saved streams, preferences, and channel IDs, by selecting the button below. This action does not delete your YouTube videos, channel, or any data held by YouTube.</p>
+        <button id="delete-local-data" type="button">Delete my local LiveMerge data</button>
+        <span id="deletion-status" role="status" aria-live="polite"></span>
+      </div>
+      <p>If you signed in with Google in an earlier version of LiveMerge, you can remove its access from <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener noreferrer">Google Account permissions</a>. Deleting your local data above also removes any leftover access token stored by that version.</p>
+
+      <h2>Contact</h2>
+      <p>For privacy questions or help deleting data, open a request through the <a href="https://github.com/HenriquePassarelli/LiveMerge/issues" target="_blank" rel="noopener noreferrer">LiveMerge issue tracker</a>.</p>
+    </main>
+    <script>
+      document.getElementById('delete-local-data').addEventListener('click', () => {
+        Object.keys(localStorage).filter((key) => key.startsWith('livemerge.')).forEach((key) => localStorage.removeItem(key))
+        document.getElementById('deletion-status').textContent = 'Your local LiveMerge data has been deleted.'
+      })
+    </script>
+  </body>
+</html>
