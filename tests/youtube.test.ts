@@ -7,6 +7,7 @@ import {
   getCanonicalVideoId,
   getChannelIdFromPage,
   getChannelNameFromPage,
+  getVideoIdFromPage,
   isLiveNow
 } from '../functions/_lib/youtube.ts'
 
@@ -79,6 +80,23 @@ describe('getCanonicalVideoId', () => {
 
   it('returns null for a channel page', () => {
     assert.equal(getCanonicalVideoId(offlineChannelPage), null)
+  })
+})
+
+describe('getVideoIdFromPage', () => {
+  it('prefers the canonical link', () => {
+    assert.equal(getVideoIdFromPage(livePage), VIDEO_ID)
+  })
+
+  it('falls back to the player data when the canonical link is missing', () => {
+    const withoutCanonical = livePage.replace(/<link rel="canonical"[^>]*>/, '')
+
+    assert.equal(getCanonicalVideoId(withoutCanonical), null)
+    assert.equal(getVideoIdFromPage(withoutCanonical), VIDEO_ID)
+  })
+
+  it('returns null for an offline channel page', () => {
+    assert.equal(getVideoIdFromPage(offlineChannelPage), null)
   })
 })
 

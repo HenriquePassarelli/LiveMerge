@@ -26,9 +26,23 @@ export const fetchYouTube = async (url: string): Promise<string> => {
   const response = await fetch(url, { headers: YOUTUBE_HEADERS, redirect: 'follow' })
 
   if (!response.ok) throw new UpstreamError(`YouTube responded with ${response.status}`, response.status)
-  if (response.url.includes('consent.youtube.com')) throw new UpstreamError('YouTube asked for consent', 502)
+  if (response.url.includes('consent.youtube.com') || response.url.includes('/sorry/')) {
+    throw new UpstreamError('YouTube asked for consent or a bot check', 502)
+  }
 
-  return response.text()
+  const body = await response.text()
+
+  // A consent page served at the original URL has no player data. Reporting it as "offline" would be wrong,
+  // so treat it as an error and let the client keep its previous state.
+  if (
+    body.includes('consent.youtube.com') &&
+    !body.includes('ytInitialData') &&
+    !body.includes('ytInitialPlayerResponse')
+  ) {
+    throw new UpstreamError('YouTube asked for consent', 502)
+  }
+
+  return body
 }
 
 export const json = (body: unknown, status = 200, maxAgeSeconds = 0): Response =>
@@ -87,6 +101,13 @@ export const isLiveNow = (html: string): boolean =>
 
 export const getCanonicalVideoId = (html: string): string | null =>
   html.match(/<link rel="canonical" href="https:\/\/www\.youtube\.com\/watch\?v=([\w-]{11})"/)?.[1] ?? null
+
+// Same as above, with fallbacks for pages where the canonical link is missing or written differently.
+export const getVideoIdFromPage = (html: string): string | null =>
+  getCanonicalVideoId(html) ??
+  html.match(/"liveStreamabilityRenderer":\{"videoId":"([\w-]{11})"/)?.[1] ??
+  html.match(/"videoDetails":\{"videoId":"([\w-]{11})"/)?.[1] ??
+  null
 
 // A channel page (for example youtube.com/@handle) names its own channel ID in several places.
 export const getChannelIdFromPage = (html: string): string | null =>
