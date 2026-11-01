@@ -2,6 +2,16 @@
   "name": "livemerge",
   "private": true,
   "version": "0.0.0",
+  "description": "Watch multiple YouTube live streams together in one wall, with live chat and no API key.",
+  "license": "MIT",
+  "author": "Henrique Passarelli",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/HenriquePassarelli/LiveMerge.git"
+  },
+  "bugs": {
+    "url": "https://github.com/HenriquePassarelli/LiveMerge/issues"
+  },
   "type": "module",
   "scripts": {
     "dev": "vite",

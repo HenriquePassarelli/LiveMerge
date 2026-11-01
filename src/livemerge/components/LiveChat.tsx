@@ -6,6 +6,8 @@ import { buildLiveChatUrl } from '../utils/youtube.utils'
 
 type Props = {
   chatUrl: string | null
+  // Name of the stream the chat belongs to, shown quietly next to the panel title.
+  title?: string
   onClose: () => void
 }
 
@@ -26,7 +28,7 @@ const clampPosition = (x: number, y: number, width: number, height: number) => {
   }
 }
 
-const LiveChat = ({ chatUrl, onClose }: Props) => {
+const LiveChat = ({ chatUrl, title, onClose }: Props) => {
   const chatRef = useRef<HTMLElement | null>(null)
   const chatDragStateRef = useRef({
     dragging: false,
@@ -132,7 +134,10 @@ const LiveChat = ({ chatUrl, onClose }: Props) => {
       aria-expanded={!isChatMinimized}
     >
       <FloatingChatHeader onPointerDown={handleChatPointerDown}>
-        <span>Live Chat</span>
+        <HeaderTitle title={title ? `Live Chat (${title})` : 'Live Chat'}>
+          Live Chat
+          {title && <ChatName> ({title})</ChatName>}
+        </HeaderTitle>
         <FloatingChatControls onPointerDown={(event) => event.stopPropagation()}>
           <button
             type="button"
@@ -217,6 +222,19 @@ export const FloatingChatWrap = styled.section`
   }
 `
 
+const HeaderTitle = styled.span`
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+`
+
+const ChatName = styled.span`
+  font-size: 12px;
+  font-weight: 400;
+  color: #8fa5cf;
+`
+
 export const FloatingChatHeader = styled.div`
   display: flex;
   align-items: center;
@@ -238,6 +256,7 @@ export const FloatingChatControls = styled.div`
   display: flex;
   align-items: center;
   gap: 6px;
+  flex-shrink: 0;
 
   button {
     display: inline-flex;

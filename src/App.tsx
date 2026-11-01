@@ -38,7 +38,7 @@ function App() {
   const [modalSession, setModalSession] = useState(0)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isSortModalOpen, setIsSortModalOpen] = useState(false)
-  const [chatUrl, setChatUrl] = useState<string | null>(null)
+  const [chat, setChat] = useState<{ url: string; title: string } | null>(null)
   const [focusedStreamId, setFocusedStreamId] = useState<string | null>(null)
   const [sortMode, setSortMode] = useStorage<SortMode>(STORAGE_KEYS.sortMode, 'default')
   const [customSortOrder, setCustomSortOrder] = useStorage<string[]>(STORAGE_KEYS.customSortOrder, [])
@@ -195,14 +195,16 @@ function App() {
     const targetChatUrl = stream.chatUrl || (stream.originalUrl ? normalizeChatUrl(stream.originalUrl) : '')
     if (!targetChatUrl) return
 
-    setChatUrl((prev) => {
-      if (!prev) return targetChatUrl
-      const prevVideoId = getYouTubeVideoId(prev)
+    const targetChat = { url: targetChatUrl, title: stream.title?.trim() ?? '' }
+
+    setChat((prev) => {
+      if (!prev) return targetChat
+      const prevVideoId = getYouTubeVideoId(prev.url)
       const targetVideoId = getYouTubeVideoId(targetChatUrl)
       if (prevVideoId && targetVideoId && prevVideoId === targetVideoId) {
         return null
       }
-      return prev.includes(targetChatUrl) || targetChatUrl.includes(prev) ? null : targetChatUrl
+      return prev.url.includes(targetChatUrl) || targetChatUrl.includes(prev.url) ? null : targetChat
     })
   }
 
@@ -249,7 +251,7 @@ function App() {
           ))}
         </SimpleGrid>
 
-        <LiveChat chatUrl={chatUrl} onClose={() => setChatUrl(null)} />
+        <LiveChat chatUrl={chat?.url ?? null} title={chat?.title} onClose={() => setChat(null)} />
 
         <ActionMenu openModal={openModal} handleOpenSortModal={handleOpenSortModal} />
 

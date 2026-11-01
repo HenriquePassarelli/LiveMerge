@@ -78,12 +78,12 @@ export const withCache = async (request: Request, produce: () => Promise<Respons
 
 // videoDetails carries "isLive":true only while a video is broadcasting (past streams have isLiveContent instead).
 const getVideoDetailsBlock = (html: string): string => {
-  const index = html.indexOf('"videoDetails":{')
+  const index = html.search(/"videoDetails"\s*:\s*\{/)
   return index === -1 ? '' : html.slice(index, index + 30000)
 }
 
 const getPlayabilityBlock = (html: string): string => {
-  const index = html.indexOf('"playabilityStatus":{')
+  const index = html.search(/"playabilityStatus"\s*:\s*\{/)
   return index === -1 ? '' : html.slice(index, index + 2000)
 }
 
@@ -105,14 +105,14 @@ export const getCanonicalVideoId = (html: string): string | null =>
 // Same as above, with fallbacks for pages where the canonical link is missing or written differently.
 export const getVideoIdFromPage = (html: string): string | null =>
   getCanonicalVideoId(html) ??
-  html.match(/"liveStreamabilityRenderer":\{"videoId":"([\w-]{11})"/)?.[1] ??
-  html.match(/"videoDetails":\{"videoId":"([\w-]{11})"/)?.[1] ??
+  html.match(/"liveStreamabilityRenderer"\s*:\s*\{\s*"videoId"\s*:\s*"([\w-]{11})"/)?.[1] ??
+  html.match(/"videoDetails"\s*:\s*\{\s*"videoId"\s*:\s*"([\w-]{11})"/)?.[1] ??
   null
 
 // A channel page (for example youtube.com/@handle) names its own channel ID in several places.
 export const getChannelIdFromPage = (html: string): string | null =>
   html.match(/<link rel="canonical" href="https:\/\/www\.youtube\.com\/channel\/(UC[\w-]{22})"/)?.[1] ??
-  html.match(/"externalId":"(UC[\w-]{22})"/)?.[1] ??
+  html.match(/"externalId"\s*:\s*"(UC[\w-]{22})"/)?.[1] ??
   html.match(/<meta itemprop="(?:identifier|channelId)" content="(UC[\w-]{22})"/)?.[1] ??
   null
 
@@ -150,13 +150,13 @@ const getMetaContent = (html: string, property: string): string | null => {
 
 export const getChannelNameFromPage = (html: string): string | null => {
   // Channel page data (offline channels) and live watch page data (live channels).
-  const metadata = html.match(/"channelMetadataRenderer":\{"title":"((?:[^"\\]|\\.)*)"/)?.[1]
+  const metadata = html.match(/"channelMetadataRenderer"\s*:\s*\{\s*"title"\s*:\s*"((?:[^"\\]|\\.)*)"/)?.[1]
   if (metadata) return parseJsonString(metadata)
 
-  const owner = html.match(/"ownerChannelName":"((?:[^"\\]|\\.)*)"/)?.[1]
+  const owner = html.match(/"ownerChannelName"\s*:\s*"((?:[^"\\]|\\.)*)"/)?.[1]
   if (owner) return parseJsonString(owner)
 
-  const author = html.match(/"author":"((?:[^"\\]|\\.)*)"/)?.[1]
+  const author = html.match(/"author"\s*:\s*"((?:[^"\\]|\\.)*)"/)?.[1]
   if (author) return parseJsonString(author)
 
   const itemprop = html.match(/<link\s[^>]*itemprop="name"[^>]*content="([^"]*)"/)?.[1]
