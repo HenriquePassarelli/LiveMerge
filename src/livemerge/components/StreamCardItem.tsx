@@ -1,30 +1,74 @@
-import { memo, useMemo, useRef, useState } from 'react'
-import { Button, Group, TextInput, Title, Tooltip, Center, Stack, Text } from '@mantine/core'
+import { memo, useState } from 'react'
+import { Badge, Button, Group, TextInput, Title, Tooltip, Center, Stack, Text } from '@mantine/core'
 import { IconFocusCentered, IconEdit, IconTrash, IconMessage, IconReload } from '@tabler/icons-react'
 
 import type { Stream } from '../types/types'
 import RemoveModal from './RemoveModal'
 import styled, { css } from 'styled-components'
-import { buildPlayableUrl } from '../utils/youtube.utils'
+import { buildPlayableUrl, getYouTubeVideoId } from '../utils/youtube.utils'
+import YouTubePlayer from './YouTubePlayer'
 
 type StreamCardItemProps = {
   stream: Stream
   isFocused: boolean
+  // Visual position in the grid, applied with CSS so the card's DOM node never moves.
+  order?: number
+  hasRefreshError?: boolean
   onRemove: (streamId: string) => void
   onOpenChat: (stream: Stream) => void
   onToggleFocus: (streamId: string) => void
+  onChannelLiveEnded: (channelId: string) => void
+  onStreamLiveEnded: (streamId: string) => void
   reloadChannel?: (channelId: string) => void
   onUpdateUrl: (streamId: string, nextUrl: string) => void
 }
 
-const StreamCardItem = ({ stream, isFocused, ...props }: StreamCardItemProps) => {
-  const playerRef = useRef<HTMLIFrameElement>(null)
+type StreamPlayerProps = {
+  embedUrl: string
+  isLive: boolean | undefined
+  onLiveEnded?: () => void
+  streamId: string
+  shouldAutoplay: boolean | undefined
+  title: string | undefined
+}
 
+const StreamPlayer = memo(({ embedUrl, isLive, onLiveEnded, streamId, shouldAutoplay, title }: StreamPlayerProps) => {
+  if (isLive === false) {
+    return (
+      <Center style={{ width: '100%', height: '100%' }}>
+        <Stack align="center" gap="sm">
+          <Text size="lg" fw={500} c="dimmed">
+            Not Broadcasting
+          </Text>
+          <Text size="sm" c="dimmed">
+            This channel is not currently live
+          </Text>
+        </Stack>
+      </Center>
+    )
+  }
+
+  const videoId = getYouTubeVideoId(embedUrl)
+
+  if (videoId) {
+    return <YouTubePlayer onLiveEnded={onLiveEnded} shouldAutoplay={shouldAutoplay} title={title} videoId={videoId} />
+  }
+
+  return (
+    <iframe
+      id={streamId}
+      src={buildPlayableUrl(embedUrl, shouldAutoplay)}
+      title={title}
+      allowFullScreen={false}
+      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+    />
+  )
+})
+
+const StreamCardItem = ({ stream, isFocused, ...props }: StreamCardItemProps) => {
   const [isEditingUrl, setIsEditingUrl] = useState(false)
   const [draftUrl, setDraftUrl] = useState(stream.originalUrl || stream.embedUrl)
   const [isRemoveConfirmOpen, setIsRemoveConfirmOpen] = useState(false)
-
-  const playerUrl = useMemo(() => buildPlayableUrl(stream.embedUrl), [stream.embedUrl])
 
   const handleSaveUrl = () => {
     setIsEditingUrl(false)
@@ -55,12 +99,19 @@ const StreamCardItem = ({ stream, isFocused, ...props }: StreamCardItemProps) =>
   }
 
   return (
-    <StreamCardWrap $isFocused={isFocused}>
+    <StreamCardWrap $isFocused={isFocused} style={{ order: props.order }}>
       <Group justify="space-between" align="flex-start">
         <Group align="center" gap="xs">
           <Title order={4} style={{ lineHeight: 1.2 }}>
             {stream.title}
           </Title>
+          {props.hasRefreshError && (
+            <Tooltip label="Couldn't refresh the live status. Retrying automatically." position="top" withArrow>
+              <Badge color="yellow" variant="light" size="sm">
+                Check failed
+              </Badge>
+            </Tooltip>
+          )}
           {/* <Tooltip label={isMuted ? 'Unmute stream' : 'Mute stream'} position="top" withArrow>
             {isMuted ? (
               <IconVolumeOff className="cursor-p" size={20} onClick={toggleMute} />
@@ -117,27 +168,18 @@ const StreamCardItem = ({ stream, isFocused, ...props }: StreamCardItemProps) =>
       )}
 
       <VideoFrame $isFocused={isFocused}>
-        {stream.isLive === false ? (
-          <Center style={{ width: '100%', height: '100%' }}>
-            <Stack align="center" gap="sm">
-              <Text size="lg" fw={500} c="dimmed">
-                Not Broadcasting
-              </Text>
-              <Text size="sm" c="dimmed">
-                This channel is not currently live
-              </Text>
-            </Stack>
-          </Center>
-        ) : (
-          <iframe
-            id={stream.id}
-            ref={playerRef}
-            src={playerUrl}
-            title={stream.title}
-            allowFullScreen={false}
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          />
-        )}
+        <StreamPlayer
+          embedUrl={stream.embedUrl}
+          isLive={stream.isLive}
+          onLiveEnded={
+            stream.channelId
+              ? () => props.onChannelLiveEnded(stream.channelId!)
+              : () => props.onStreamLiveEnded(stream.id)
+          }
+          streamId={stream.id}
+          shouldAutoplay={stream.shouldAutoplay}
+          title={stream.title}
+        />
       </VideoFrame>
 
       <RemoveModal
@@ -201,6 +243,11 @@ const VideoFrame = styled.div<{ $isFocused?: boolean }>`
   display: flex;
   align-items: center;
   justify-content: center;
+
+  > div {
+    width: 100%;
+    height: 100%;
+  }
 
   ${({ $isFocused }) =>
     $isFocused

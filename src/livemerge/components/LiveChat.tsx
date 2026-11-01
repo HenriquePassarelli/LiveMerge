@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
 import styled from 'styled-components'
 
-import { IconMinus, IconX } from '@tabler/icons-react'
+import { IconMinus, IconMoon, IconPlus, IconSun, IconX } from '@tabler/icons-react'
+import { buildLiveChatUrl } from '../utils/youtube.utils'
 
 type Props = {
   chatUrl: string | null
@@ -34,8 +35,10 @@ const LiveChat = ({ chatUrl, onClose }: Props) => {
   })
 
   const [isChatMinimized, setIsChatMinimized] = useState(false)
-
   const [chatPosition, setChatPosition] = useState<{ x: number; y: number } | null>(null)
+  const [chatTheme, setChatTheme] = useState<'dark' | 'light'>('dark')
+
+  const resolvedChatUrl = buildLiveChatUrl(chatUrl ?? '', chatTheme)
 
   useEffect(() => {
     if (!chatUrl || chatPosition) return
@@ -129,23 +132,32 @@ const LiveChat = ({ chatUrl, onClose }: Props) => {
       aria-expanded={!isChatMinimized}
     >
       <FloatingChatHeader onPointerDown={handleChatPointerDown}>
-        Live Chat
+        <span>Live Chat</span>
         <FloatingChatControls onPointerDown={(event) => event.stopPropagation()}>
+          <button
+            type="button"
+            onClick={() => setChatTheme((current) => (current === 'dark' ? 'light' : 'dark'))}
+            aria-label={chatTheme === 'dark' ? 'Switch to light chat theme' : 'Switch to dark chat theme'}
+            title={chatTheme === 'dark' ? 'Switch to light chat theme' : 'Switch to dark chat theme'}
+          >
+            {chatTheme === 'dark' ? <IconSun size={16} /> : <IconMoon size={16} />}
+          </button>
           <button
             type="button"
             onClick={() => setIsChatMinimized((current) => !current)}
             aria-label={isChatMinimized ? 'Expand chat' : 'Minimize chat'}
+            title={isChatMinimized ? 'Expand chat' : 'Minimize chat'}
           >
-            <IconMinus size={16} />
+            {isChatMinimized ? <IconPlus size={16} /> : <IconMinus size={16} />}
           </button>
-          <button type="button" onClick={onClose} aria-label="Close chat">
+          <button type="button" onClick={onClose} aria-label="Close chat" title="Close chat">
             <IconX size={16} />
           </button>
         </FloatingChatControls>
       </FloatingChatHeader>
       {!isChatMinimized && (
         <FloatingChatBody>
-          <iframe title="Live chat" src={chatUrl} />
+          <iframe title="Live chat" src={resolvedChatUrl} />
         </FloatingChatBody>
       )}
     </Container>
@@ -238,16 +250,25 @@ export const FloatingChatControls = styled.div`
     color: #d5e4ff;
     background: #10203a;
     cursor: pointer;
+    transition:
+      background 0.15s ease,
+      border-color 0.15s ease;
+
+    &:hover {
+      background: #193159;
+      border-color: #3d588e;
+    }
   }
 `
 
 export const FloatingChatBody = styled.div`
   flex: 1;
-  background: #080f1d;
+  background: #0f0f0f;
 
   iframe {
     width: 100%;
     height: 100%;
     border: 0;
+    display: block;
   }
 `

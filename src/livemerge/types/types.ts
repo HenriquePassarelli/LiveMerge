@@ -15,6 +15,7 @@ export type StreamInput = {
 export type Stream = StreamInput & {
   id: string
   isLive?: boolean
+  shouldAutoplay?: boolean
 }
 
 export type ChannelInput = {

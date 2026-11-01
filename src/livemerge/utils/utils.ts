@@ -1,5 +1,5 @@
 import type { StreamInput } from '../types/types'
-import { normalizeYoutubeUrl } from './youtube.utils'
+import { buildLiveChatUrl, normalizeYoutubeUrl } from './youtube.utils'
 
 const normalizeEmbedUrl = (url: string): string => {
   const trimmed = url.trim()
@@ -23,26 +23,8 @@ const normalizeEmbedUrl = (url: string): string => {
   return trimmed
 }
 
-const normalizeChatUrl = (url: string): string => {
-  const trimmed = url.trim()
-  if (!trimmed) return ''
-
-  if (trimmed.includes('youtube.com/watch')) {
-    try {
-      const parsed = new URL(trimmed)
-      const videoId = parsed.searchParams.get('v')
-      if (videoId) return `https://www.youtube.com/live_chat?v=${videoId}&embed_domain=${window.location.hostname}`
-    } catch {
-      return trimmed
-    }
-  }
-
-  if (trimmed.includes('youtu.be/')) {
-    const id = trimmed.split('youtu.be/')[1]?.split('?')[0]
-    if (id) return `https://www.youtube.com/live_chat?v=${id}`
-  }
-
-  return trimmed
+export const normalizeChatUrl = (url: string): string => {
+  return buildLiveChatUrl(url, 'dark')
 }
 
 export const normalizeStreamInput = (input: StreamInput | string): Omit<StreamInput, 'title'> => {

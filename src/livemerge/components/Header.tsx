@@ -1,20 +1,15 @@
 import { Anchor, Badge, Flex, Group, Text, Title } from '@mantine/core'
 import { IconBrandGithub } from '@tabler/icons-react'
 import styled from 'styled-components'
-import GoogleButton from '../ui/GoogleButton'
 
 type HeroPanelProps = {
-  token?: string
   streamCount?: number
   channelsCount?: number
-  handleGoogleSignIn: () => void
 }
 
-const Header = ({ token, streamCount = 0, channelsCount = 0, handleGoogleSignIn }: HeroPanelProps) => {
+const Header = ({ streamCount = 0, channelsCount = 0 }: HeroPanelProps) => {
   const streams = streamCount + channelsCount
   const streamLabel = streams === 1 ? 'stream' : 'streams'
-
-  console.log(token)
 
   return (
     <Container>
@@ -33,23 +28,30 @@ const Header = ({ token, streamCount = 0, channelsCount = 0, handleGoogleSignIn 
           </Text>
         </HeaderMeta>
 
-        <Group justify="space-between" align="center" wrap="nowrap">
+        <Flex
+          gap="md"
+          justify="space-between"
+          direction={{ base: 'row', sm: 'column' }}
+          align={{ base: 'stretch', sm: 'flex-end' }}
+        >
           <Group justify="space-between" align="center" wrap="nowrap">
-            {!token && channelsCount > 0 && <GoogleButton onClick={handleGoogleSignIn}>Login</GoogleButton>}
             <Badge variant="light" color="cyan" size="lg">
               {streams} {streamLabel}
             </Badge>
-          </Group>
 
-          <Anchor
-            c="white"
-            target="_blank"
-            rel="noopener noreferrer"
-            href="https://github.com/HenriquePassarelli/LiveMerge"
-          >
-            <IconBrandGithub size={20} />
+            <Anchor
+              c="white"
+              target="_blank"
+              rel="noopener noreferrer"
+              href="https://github.com/HenriquePassarelli/LiveMerge"
+            >
+              <IconBrandGithub size={20} />
+            </Anchor>
+          </Group>
+          <Anchor c="dimmed" size="sm" href="/privacy">
+            Privacy
           </Anchor>
-        </Group>
+        </Flex>
       </Flex>
     </Container>
   )

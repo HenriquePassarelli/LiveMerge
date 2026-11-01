@@ -62,7 +62,7 @@ const SortModal = ({ opened, streams, initialOrder, initialSortMode, onClose, on
           <Radio.Group value={draftSortMode} onChange={(value) => setDraftSortMode(value as SortMode)}>
             <Stack gap="sm" pl="md">
               <Group gap="md" wrap="nowrap">
-                <Radio value="default" />
+                <Radio value="custom" />
                 <Stack gap={0}>
                   <Group gap="xs" align="center">
                     <ThemeIcon variant="light" size="sm" color="cyan">
@@ -110,7 +110,7 @@ const SortModal = ({ opened, streams, initialOrder, initialSortMode, onClose, on
         </Stack>
 
         {/* Custom Order Editor - only show for custom mode */}
-        {draftSortMode === 'default' && (
+        {draftSortMode === 'custom' && (
           <>
             <Divider />
             <Stack gap="md">

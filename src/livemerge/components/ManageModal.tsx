@@ -1,24 +1,26 @@
 import { useState } from 'react'
 import type { SubmitEvent } from 'react'
-import { Button, Group, Modal, Stack, Switch, Tabs, Text, TextInput } from '@mantine/core'
+import { Button, Group, Modal, Stack, Switch, Tabs, TextInput } from '@mantine/core'
 
 import type { StreamInput, UserPreferences } from '../types/types'
 import { EMPTY_STREAM_INPUT } from '../constants'
-import GoogleButton from '../ui/GoogleButton'
 
 type ManageModalProps = {
   opened: boolean
   onClose: () => void
   initialPreferences: UserPreferences
-  accessToken?: string
-  handleGoogleSignIn: () => void
   onSubmitStream: (stream: StreamInput) => void
-  onSubmitChannel: (channelId: string) => void
+  onSubmitChannel: (channelIdOrHandle: string) => Promise<boolean>
   onSubmitUser: (preferences: UserPreferences) => void
 }
 
-const ManageModal = ({ onClose, handleGoogleSignIn, onSubmitStream, onSubmitUser, ...props }: ManageModalProps) => {
+const CHANNEL_ID_REGEX = /UC[\w-]{22}/
+// Matches "@name" typed alone or inside a youtube.com/@name URL.
+const HANDLE_REGEX = /(?:^|youtube\.com\/)(@[\w.-]{3,30})/
+
+const ManageModal = ({ onClose, onSubmitStream, onSubmitUser, ...props }: ManageModalProps) => {
   const [draftChannelId, setDraftChannelId] = useState<string>('')
+  const [isAddingChannel, setIsAddingChannel] = useState(false)
   const [draftStream, setDraftStream] = useState<StreamInput>(EMPTY_STREAM_INPUT)
   const [draftPreferences, setDraftPreferences] = useState<UserPreferences>(props.initialPreferences)
 
@@ -34,16 +36,25 @@ const ManageModal = ({ onClose, handleGoogleSignIn, onSubmitStream, onSubmitUser
     setDraftStream(EMPTY_STREAM_INPUT)
   }
 
-  const handleChannelSubmit = (event: SubmitEvent<HTMLFormElement>) => {
+  const handleChannelSubmit = async (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault()
 
-    if (!draftChannelId.trim()) {
-      alert('Please provide a channel ID.')
+    // Accepts a channel ID, a youtube.com/channel/UC... URL, an @handle or a youtube.com/@handle URL.
+    const input = draftChannelId.trim()
+    const channelIdOrHandle = input.match(HANDLE_REGEX)?.[1] ?? input.match(CHANNEL_ID_REGEX)?.[0]
+
+    if (!channelIdOrHandle) {
+      alert('Please provide a channel ID (UCxxxxxxxxxxxxxxxxxxxxxx), an @handle, or a YouTube channel URL.')
       return
     }
 
-    props.onSubmitChannel(draftChannelId.trim())
-    setDraftChannelId('')
+    setIsAddingChannel(true)
+    try {
+      const isAdded = await props.onSubmitChannel(channelIdOrHandle)
+      if (isAdded) setDraftChannelId('')
+    } finally {
+      setIsAddingChannel(false)
+    }
   }
 
   const handleUserSubmit = (event: SubmitEvent<HTMLFormElement>) => {
@@ -138,29 +149,23 @@ const ManageModal = ({ onClose, handleGoogleSignIn, onSubmitStream, onSubmitUser
         </Tabs.Panel>
 
         <Tabs.Panel value="channel" pt="md">
-          <Stack>
-            {!props.accessToken ? (
-              <>
-                <Text>Sign in with Google to add channels</Text>
-                <GoogleButton onClick={handleGoogleSignIn} />
-              </>
-            ) : (
-              <form onSubmit={handleChannelSubmit}>
-                <Stack>
-                  <TextInput
-                    label="Channel ID"
-                    placeholder=""
-                    value={draftChannelId}
-                    onChange={(event) => setDraftChannelId(event.currentTarget.value)}
-                    required
-                  />
-                  <Group justify="flex-end">
-                    <Button type="submit">Add Channel</Button>
-                  </Group>
-                </Stack>
-              </form>
-            )}
-          </Stack>
+          <form onSubmit={handleChannelSubmit}>
+            <Stack>
+              <TextInput
+                label="Channel ID, @handle or URL"
+                placeholder="@handle, UCxxxxxxxxxxxxxxxxxxxxxx or https://www.youtube.com/@handle"
+                value={draftChannelId}
+                onChange={(event) => setDraftChannelId(event.currentTarget.value)}
+                disabled={isAddingChannel}
+                required
+              />
+              <Group justify="flex-end">
+                <Button type="submit" loading={isAddingChannel}>
+                  Add Channel
+                </Button>
+              </Group>
+            </Stack>
+          </form>
         </Tabs.Panel>
       </Tabs>
     </Modal>

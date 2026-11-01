@@ -11,20 +11,29 @@ import { useStateManager } from './livemerge/hooks/useStateManager'
 import { useStorage } from './livemerge/hooks/useStorage'
 import { Shell } from './livemerge/styles'
 import type { SortMode, Stream, StreamInput, UserPreferences } from './livemerge/types/types'
-import { normalizeStreamInput } from './livemerge/utils/utils'
+import { normalizeChatUrl, normalizeStreamInput } from './livemerge/utils/utils'
+import { getYouTubeVideoId } from './livemerge/utils/youtube.utils'
 import useKey from './livemerge/hooks/useKey'
 import LiveChat from './livemerge/components/LiveChat'
 import { getSortedStreams } from './livemerge/utils/sort.utils'
 import ActionMenu from './livemerge/components/ActionMenu'
 import useChannels from './livemerge/hooks/useChannels'
-import useGoogleAuth from './livemerge/hooks/useGoogleAuth'
+import { getVideoLiveStatus } from './livemerge/services/getVideoLiveStatus'
+import { resolveChannelHandle } from './livemerge/services/resolveChannelHandle'
+import { useStreamLiveStatus } from './livemerge/hooks/useStreamLiveStatus'
 
 function App() {
   const { streams, addStream, removeStream, updateStream, ...stateManager } = useStateManager()
 
-  const { userToken, handleGoogleSignIn, getToken } = useGoogleAuth()
+  const { channelStreams, channelErrors, loadChannel, reloadChannel, removeChannelStream, markChannelOffline } =
+    useChannels(stateManager.channels)
 
-  const { channelStreams, reloadChannel } = useChannels(stateManager.channels, getToken)
+  useStreamLiveStatus(streams, updateStream)
+
+  // A manual stream that finishes broadcasting should stop autoplaying and syncing to the live edge.
+  const handleStreamLiveEnded = (streamId: string) => {
+    updateStream(streamId, { shouldAutoplay: false })
+  }
 
   const [modalSession, setModalSession] = useState(0)
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -44,17 +53,18 @@ function App() {
 
   useEffect(() => {
     setCustomSortOrder((current) => {
-      // Combine both streams and channelStreams for custom order
+      // Keep saved channel IDs while their stream data is being reloaded.
+      // Otherwise a refresh temporarily removes them from the custom order.
       const allStreams = [...streams, ...channelStreams]
-      const streamIds = allStreams.map((stream) => stream.id)
-      const validCurrent = current.filter((id) => streamIds.includes(id))
-      const missingIds = streamIds.filter((id) => !validCurrent.includes(id))
+      const streamIds = new Set([...allStreams.map((stream) => stream.id), ...stateManager.channels])
+      const validCurrent = current.filter((id) => streamIds.has(id))
+      const missingIds = allStreams.map((stream) => stream.id).filter((id) => !validCurrent.includes(id))
       const next = [...validCurrent, ...missingIds]
 
       const isSame = next.length === current.length && next.every((id, index) => id === current[index])
       return isSame ? current : next
     })
-  }, [setCustomSortOrder, streams, channelStreams])
+  }, [setCustomSortOrder, stateManager.channels, streams, channelStreams])
 
   const handleAddStream = (input: StreamInput) => {
     const title = input.title?.trim() || ''
@@ -66,14 +76,21 @@ function App() {
       return
     }
 
-    const newStream: Stream = {
-      ...normalizedUrls,
-      id: crypto.randomUUID(),
-      title
+    const videoId = getYouTubeVideoId(normalizedUrls.originalUrl)
+
+    const addStreamWithStatus = async () => {
+      const shouldAutoplay = videoId ? await getVideoLiveStatus(videoId) : false
+      const newStream: Stream = {
+        ...normalizedUrls,
+        id: crypto.randomUUID(),
+        title,
+        shouldAutoplay
+      }
+
+      addStream(newStream)
     }
 
-    addStream(newStream)
-
+    void addStreamWithStatus()
     setIsModalOpen(false)
   }
 
@@ -86,13 +103,48 @@ function App() {
     setIsModalOpen(false)
   }
 
-  const handleAddChannel = (channelId: string) => {
+  const handleAddChannel = async (channelIdOrHandle: string): Promise<boolean> => {
+    let channelId = channelIdOrHandle
+
+    if (channelIdOrHandle.startsWith('@')) {
+      const resolvedChannelId = await resolveChannelHandle(channelIdOrHandle)
+
+      if (!resolvedChannelId) {
+        alert(`Could not find a channel for ${channelIdOrHandle}. Check the handle and try again.`)
+        return false
+      }
+
+      channelId = resolvedChannelId
+    }
+
+    if (stateManager.channels.includes(channelId)) {
+      alert('This channel has already been added.')
+      return false
+    }
+
+    // Load the channel name and live status first, so only real, reachable channels are added.
+    const isLoaded = await loadChannel(channelId)
+
+    if (!isLoaded) {
+      alert('Could not load this channel or its name. Check the channel ID and try again.')
+      return false
+    }
+
     stateManager.addChannel(channelId)
     setIsModalOpen(false)
+    return true
   }
 
   const handleRemoveStream = (streamId: string) => {
-    removeStream(streamId)
+    const channelStream = channelStreams.find((stream) => stream.id === streamId)
+
+    if (channelStream?.channelId) {
+      stateManager.removeChannel(channelStream.channelId)
+      removeChannelStream(channelStream.channelId)
+    } else {
+      removeStream(streamId)
+    }
+
     setFocusedStreamId((current) => (current === streamId ? null : current))
   }
 
@@ -107,9 +159,17 @@ function App() {
       return
     }
 
-    updateStream(streamId, {
-      ...normalizedEmbedUrl
-    })
+    const videoId = getYouTubeVideoId(normalizedEmbedUrl.originalUrl)
+
+    const updateStreamWithStatus = async () => {
+      const shouldAutoplay = videoId ? await getVideoLiveStatus(videoId) : false
+      updateStream(streamId, {
+        ...normalizedEmbedUrl,
+        shouldAutoplay
+      })
+    }
+
+    void updateStreamWithStatus()
   }
 
   const openModal = () => {
@@ -132,15 +192,30 @@ function App() {
   }
 
   const handleOpenChat = (stream: Stream) => {
-    setChatUrl((prev) => (prev?.includes(stream.chatUrl) ? null : stream.chatUrl))
+    const targetChatUrl = stream.chatUrl || (stream.originalUrl ? normalizeChatUrl(stream.originalUrl) : '')
+    if (!targetChatUrl) return
+
+    setChatUrl((prev) => {
+      if (!prev) return targetChatUrl
+      const prevVideoId = getYouTubeVideoId(prev)
+      const targetVideoId = getYouTubeVideoId(targetChatUrl)
+      if (prevVideoId && targetVideoId && prevVideoId === targetVideoId) {
+        return null
+      }
+      return prev.includes(targetChatUrl) || targetChatUrl.includes(prev) ? null : targetChatUrl
+    })
   }
 
-  const orderedStreams = useMemo(() => {
-    let sortableStreams = [...streams, ...channelStreams]
+  // Cards are always rendered in the same DOM order (by id) and positioned with CSS `order` instead.
+  // Moving an iframe in the DOM reloads it, so changing the sort must never reorder the DOM nodes.
+  const { renderedStreams, visualPositions } = useMemo(() => {
+    const allStreams = [...streams, ...channelStreams]
+    const sortedStreams = getSortedStreams(allStreams, sortMode, customSortOrder)
 
-    sortableStreams = getSortedStreams(sortableStreams, sortMode, customSortOrder)
-
-    return sortableStreams
+    return {
+      renderedStreams: [...allStreams].sort((a, b) => a.id.localeCompare(b.id)),
+      visualPositions: new Map(sortedStreams.map((stream, index) => [stream.id, index]))
+    }
   }, [customSortOrder, sortMode, channelStreams, streams])
 
   return (
@@ -153,20 +228,19 @@ function App() {
       }}
     >
       <Shell>
-        <Header
-          token={userToken}
-          streamCount={streams.length}
-          channelsCount={stateManager.channels.length}
-          handleGoogleSignIn={handleGoogleSignIn}
-        />
+        <Header streamCount={streams.length} channelsCount={stateManager.channels.length} />
 
         <SimpleGrid cols={{ base: 1, md: 2, xl: 3 }} spacing="xs">
-          {orderedStreams.map((stream) => (
+          {renderedStreams.map((stream) => (
             <StreamCardItem
               key={stream.id}
               stream={stream}
+              order={visualPositions.get(stream.id)}
+              hasRefreshError={Boolean(stream.channelId && channelErrors[stream.channelId])}
               isFocused={stream.id === focusedStreamId}
               onOpenChat={handleOpenChat}
+              onChannelLiveEnded={markChannelOffline}
+              onStreamLiveEnded={handleStreamLiveEnded}
               onRemove={handleRemoveStream}
               reloadChannel={reloadChannel}
               onToggleFocus={handleToggleFocus}
@@ -182,11 +256,9 @@ function App() {
         <ManageModal
           key={modalSession}
           opened={isModalOpen}
-          accessToken={userToken}
           onSubmitStream={handleAddStream}
           onSubmitChannel={handleAddChannel}
           onSubmitUser={handleSaveUserSetup}
-          handleGoogleSignIn={handleGoogleSignIn}
           initialPreferences={stateManager.userPreferences}
           onClose={() => setIsModalOpen(false)}
         />

@@ -3,12 +3,12 @@ import type { Stream, UserPreferences } from './types/types'
 export const STORAGE_KEYS = {
   preferences: 'livemerge.preferences',
   streams: 'livemerge.streams',
+  channelStreams: 'livemerge.channelStreams',
   joinedStreams: 'livemerge.joinedStreams',
   customSortOrder: 'livemerge.customSortOrder',
-  userToken: 'livemerge.userToken',
   channels: 'livemerge.channels',
   sortMode: 'livemerge.sortMode',
-  tokenExpireDate: 'livemerge.tokenExpireDate'
+  chatTheme: 'livemerge.chatTheme'
 } as const
 
 export const DEFAULT_PREFERENCES: UserPreferences = {
@@ -30,13 +30,13 @@ export const DEFAULT_STREAMS: Stream[] = [
     title: 'Lo-fi Focus Stream',
     originalUrl: 'https://www.youtube.com/watch?v=jfKfPfyJRdk',
     embedUrl: 'https://www.youtube.com/embed/jfKfPfyJRdk',
-    chatUrl: 'https://www.youtube.com/live_chat?v=jfKfPfyJRdk'
+    chatUrl: 'https://www.youtube.com/live_chat?v=jfKfPfyJRdk&dark_theme=1'
   },
   {
     id: 'stream-2',
     title: 'Nature Live Cam',
     originalUrl: 'https://www.youtube.com/watch?v=X2Uul2SBLsE',
     embedUrl: 'https://www.youtube.com/embed/X2Uul2SBLsE',
-    chatUrl: 'https://www.youtube.com/live_chat?v=X2Uul2SBLsE'
+    chatUrl: 'https://www.youtube.com/live_chat?v=X2Uul2SBLsE&dark_theme=1'
   }
 ]
